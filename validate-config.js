@@ -34,7 +34,8 @@
       exclude: [],
       breakOnError: false,
       tsconfig: 'tsconfig.json',
-      typeCheck: false
+      typeCheck: false,
+      fast: false,
     }
 
     if (config) {
@@ -49,7 +50,7 @@
       extendedConfig.tslint = config.tslint || defaultConfig.tslint;
       extendedConfig.srcFiles = config.srcFiles || defaultConfig.srcFiles;
       extendedConfig.outDir = config.outDir || defaultConfig.outDir;
-      extendedConfig.json = defaultConfig.json;
+      extendedConfig.json = config.json || defaultConfig.json;
       extendedConfig.html = config.html || defaultConfig.html;
       extendedConfig.exclude = defaultConfig.exclude;
       extendedConfig.breakOnError = config.breakOnError;
@@ -58,6 +59,7 @@
       if (config.exclude) {
         extendedConfig.exclude = Array.isArray(config.exclude) ? config.exclude : extendedConfig.exclude.push(config.exclude);
       }
+      extendedConfig.fast = config.fast === undefined ? extendedConfig.fast : config.fast;
     } else {
       extendedConfig = defaultConfig;
     }

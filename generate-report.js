@@ -1,4 +1,3 @@
-
 (function () {
 
   'use strict';
@@ -32,26 +31,38 @@
       cliArguments = cliArguments + ' --project "' + config.tsconfig + '"';
     }
 
-    console.info(funkyLogger.color('cyan', 'Generating TSlint report.'));
-    const result = npmRun.exec('tslint' + cliArguments, { cwd: __dirname }, (error, stdout, stderr) => {
-      if (error) {
-        console.error(error);
-      }
-      console.info(stderr);
-      console.info(stdout);
+    console.log(config);
+    
+    if (config.fast) {
+      generateReportFromJson(); 
+    } else {
+      console.info(funkyLogger.color('cyan', 'Generating TSlint report.'));
+      const result = npmRun.exec('tslint' + cliArguments, {
+        cwd: __dirname
+      }, (error, stdout, stderr) => {
+        if (error) {
+          console.error(error);
+        }
+        console.info(stderr);
+        console.info(stdout);
 
-      console.info(funkyLogger.color('green', 'Tslint report written to JSON'));
+        console.info(funkyLogger.color('green', 'Tslint report written to JSON'));
 
+        generateReportFromJson();
+      });
+    }
+
+    function generateReportFromJson() {
       console.info(funkyLogger.color('cyan', 'Reading json file...'));
       fs.readFile(config.jsonReport, 'utf8', (error, contents) => {
         if (error) {
           console.error(error);
         }
         let rawData = JSON.parse(contents);
-
+    
         console.info(funkyLogger.color('green', 'File read complete.'));
         let filesCovered = [];
-
+    
         console.info(funkyLogger.color('cyan', 'Mapping data...'));
         rawData.forEach((obj) => {
           if (filesCovered.includes(obj.name)) {
@@ -61,47 +72,49 @@
             fileListWithErrorCount[obj.name] = 1;
           }
         });
-
+    
         Object.keys(fileListWithErrorCount).forEach((key) => {
           fileListWithErrorCountArray.push({
             name: key,
             count: fileListWithErrorCount[key],
-            details: _.filter(rawData, { name: key })
+            details: _.filter(rawData, {
+              name: key
+            })
           });
         });
         console.info(funkyLogger.color('green', 'Data mapping complete.'));
-
+    
         fileListWithErrorCountArray.sort(function (a, b) {
           return b.count - a.count;
         });
-
+    
         for (let i = 0; i < fileListWithErrorCountArray.length; i++) {
           fileListWithErrorCountArray[i].index = i + 1;
         }
-
+    
         data.total = rawData.length;
         data.errors = fileListWithErrorCountArray;
-
+    
         console.info(funkyLogger.color('cyan', 'Writing data...'));
         const template = fs.readFileSync(__dirname + '/html-report-template.html', 'utf8');
         const compiledTemplate = handlebars.compile(template, {});
         const html = compiledTemplate(data);
         fs.writeFile(config.finalReport, html, 'utf8', () => {
           console.info(funkyLogger.color('green', 'Data write complete.'));
-
+    
           console.info(funkyLogger.color('yellow', '\nTotal lint issues found: '), funkyLogger.color('red', data.total));
           console.info(funkyLogger.color('green', 'TSLint html report generated and written to file'));
-
+    
           if (config.breakOnError && data.total > 0) {
             process.exit(1);
           }
           done()
         });
-
+    
       });
-
-    });
-
+    
+    }
+    
   }
 
   module.exports = generateReport;
